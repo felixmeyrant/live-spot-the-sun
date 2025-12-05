@@ -142,6 +142,95 @@
       0% { transform: scale(0) rotate(-180deg); }
       100% { transform: scale(1) rotate(0deg); }
     }
+    /* Onboarding animations */
+    @keyframes slideInRight {
+      from { opacity: 0; transform: translateX(100px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes slideOutLeft {
+      from { opacity: 1; transform: translateX(0); }
+      to { opacity: 0; transform: translateX(-100px); }
+    }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .onboarding-slide {
+      animation: fadeInUp 0.5s ease-out;
+    }
+    .onboarding-slide.slide-out {
+      animation: slideOutLeft 0.3s ease-in forwards;
+    }
+    .onboarding-slide.slide-in {
+      animation: slideInRight 0.4s ease-out;
+    }
+    /* Floating animation for emojis */
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    .float-animation {
+      animation: float 3s ease-in-out infinite;
+    }
+    /* Bottom sheet styles */
+    #bottomSheet.open {
+      transform: translateY(0);
+    }
+    #bottomSheet.open #bottomSheetBackdrop {
+      opacity: 1;
+    }
+    /* Swipe card styles */
+    .swipe-card {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+      transition: transform 0.3s ease, opacity 0.3s ease;
+      cursor: grab;
+      overflow: hidden;
+    }
+    .swipe-card:active {
+      cursor: grabbing;
+    }
+    .swipe-card.swiping-left {
+      transform: translateX(-120%) rotate(-15deg);
+      opacity: 0;
+    }
+    .swipe-card.swiping-right {
+      transform: translateX(120%) rotate(15deg);
+      opacity: 0;
+    }
+    .swipe-card-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 80px;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .swipe-card.dragging-left .swipe-card-overlay.left {
+      opacity: 0.8;
+      background: rgba(239, 68, 68, 0.3);
+    }
+    .swipe-card.dragging-right .swipe-card-overlay.right {
+      opacity: 0.8;
+      background: rgba(234, 179, 8, 0.3);
+    }
+    /* Pull to refresh */
+    .pull-indicator {
+      transition: transform 0.2s;
+    }
+    .pulling .pull-indicator {
+      transform: rotate(180deg);
+    }
+    /* Haptic button feedback */
+    .haptic-btn:active {
+      transform: scale(0.95);
+    }
   </style>
 </head>
 <body class="bg-gradient-to-br from-sky-100 via-amber-50 to-orange-100 min-h-screen">
@@ -224,6 +313,11 @@
         <button onclick="showBadgesModal()" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 text-white font-medium shadow-lg shadow-amber-300/50 hover:shadow-xl hover:scale-105 transition-all">
           <span class="text-lg">🏆</span>
           <span id="badgeCount">0</span>
+        </button>
+        
+        <!-- Leaderboard Button -->
+        <button onclick="showLeaderboardModal()" class="flex items-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium shadow-lg shadow-purple-300/50 hover:shadow-xl hover:scale-105 transition-all">
+          <span class="text-lg">👑</span>
         </button>
 
         <!-- Install PWA Button (hidden by default) -->
@@ -485,11 +579,349 @@
     </div>
   </div>
 
+  <!-- Mobile Bottom Sheet -->
+  <div id="bottomSheet" class="fixed inset-x-0 bottom-0 z-[80] transform translate-y-full transition-transform duration-300 ease-out md:hidden">
+    <!-- Backdrop -->
+    <div id="bottomSheetBackdrop" class="fixed inset-0 bg-black/40 opacity-0 transition-opacity duration-300 -z-10" onclick="closeBottomSheet()"></div>
+    
+    <!-- Sheet Content -->
+    <div class="bg-white rounded-t-3xl shadow-2xl max-h-[85vh] flex flex-col">
+      <!-- Handle -->
+      <div class="flex justify-center py-3 cursor-grab" id="sheetHandle">
+        <div class="w-12 h-1.5 bg-gray-300 rounded-full"></div>
+      </div>
+      
+      <!-- Header -->
+      <div class="px-4 pb-3 border-b border-gray-100">
+        <div class="flex items-center justify-between">
+          <h3 class="font-bold text-lg text-gray-800" id="bottomSheetTitle">Bars à proximité</h3>
+          <div class="flex items-center gap-2">
+            <span class="text-sm text-gray-500" id="bottomSheetCount">0 résultats</span>
+            <button onclick="closeBottomSheet()" class="p-2 hover:bg-gray-100 rounded-full">
+              <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+          </div>
+        </div>
+        
+        <!-- Quick filters -->
+        <div class="flex gap-2 mt-3 overflow-x-auto pb-2 -mx-4 px-4">
+          <button onclick="setFilter('sunny'); updateBottomSheet()" class="flex-shrink-0 px-4 py-2 rounded-full bg-yellow-100 text-yellow-700 text-sm font-medium whitespace-nowrap">☀️ Au soleil</button>
+          <button onclick="setFilter('all'); updateBottomSheet()" class="flex-shrink-0 px-4 py-2 rounded-full bg-gray-100 text-gray-700 text-sm font-medium whitespace-nowrap">📍 Tout</button>
+          <button onclick="document.getElementById('sortSelect').value='distance'; handleSort(); updateBottomSheet()" class="flex-shrink-0 px-4 py-2 rounded-full bg-blue-100 text-blue-700 text-sm font-medium whitespace-nowrap">📏 Distance</button>
+        </div>
+      </div>
+      
+      <!-- Pull to refresh indicator -->
+      <div id="pullToRefreshIndicator" class="hidden items-center justify-center py-4 text-amber-600">
+        <svg class="w-6 h-6 animate-spin mr-2" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+        </svg>
+        <span class="text-sm font-medium">Actualisation...</span>
+      </div>
+      
+      <!-- Swipe Cards Container -->
+      <div id="swipeCardsContainer" class="flex-1 overflow-hidden relative px-4 py-4 hidden">
+        <div id="swipeCards" class="relative h-[300px]">
+          <!-- Cards will be inserted here -->
+        </div>
+        <div class="flex justify-center gap-8 mt-4">
+          <button onclick="swipeCard('left')" class="w-16 h-16 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-2xl shadow-lg transition-transform active:scale-90">
+            👎
+          </button>
+          <button onclick="swipeCard('right')" class="w-16 h-16 rounded-full bg-yellow-400 hover:bg-yellow-500 flex items-center justify-center text-2xl shadow-lg transition-transform active:scale-90">
+            ☀️
+          </button>
+        </div>
+        <p class="text-center text-gray-400 text-sm mt-3">← Passer · Voir le bar →</p>
+      </div>
+      
+      <!-- List View (default) -->
+      <div id="bottomSheetList" class="flex-1 overflow-y-auto px-4 py-2" style="max-height: 50vh;">
+        <!-- Bars list will be inserted here -->
+      </div>
+      
+      <!-- View Toggle -->
+      <div class="px-4 py-3 border-t border-gray-100 flex justify-center gap-2">
+        <button onclick="toggleBottomSheetView('list')" id="viewListBtn" class="px-4 py-2 rounded-lg bg-amber-500 text-white text-sm font-medium">📋 Liste</button>
+        <button onclick="toggleBottomSheetView('swipe')" id="viewSwipeBtn" class="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm font-medium">💫 Swipe</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile FAB to open bottom sheet -->
+  <button id="mobileListFab" onclick="openBottomSheet()" class="fixed bottom-6 right-6 z-[70] w-14 h-14 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/40 flex items-center justify-center text-2xl md:hidden hover:scale-110 transition-transform active:scale-95">
+    📋
+  </button>
+  
+  <!-- Map Controls Panel -->
+  <div id="mapControlsPanel" class="fixed top-24 left-4 z-[60] flex flex-col gap-2">
+    <button id="clusterToggle" onclick="toggleClusters()" class="w-12 h-12 rounded-xl bg-amber-500 text-white shadow-lg flex items-center justify-center text-xl hover:scale-105 transition-transform active:scale-95" title="Regrouper les marqueurs">
+      🔘
+    </button>
+    <button id="heatmapToggle" onclick="toggleHeatmap()" class="w-12 h-12 rounded-xl bg-white text-gray-700 shadow-lg flex items-center justify-center text-xl hover:scale-105 transition-transform active:scale-95" title="Afficher la heatmap soleil">
+      🔥
+    </button>
+    <button onclick="clearRoute()" id="clearRouteBtn" class="w-12 h-12 rounded-xl bg-white text-gray-700 shadow-lg flex items-center justify-center text-xl hover:scale-105 transition-transform active:scale-95 hidden" title="Effacer l'itinéraire">
+      🚫
+    </button>
+    <button onclick="showChallengesModal()" class="w-12 h-12 rounded-xl bg-white text-gray-700 shadow-lg flex items-center justify-center text-xl hover:scale-105 transition-transform active:scale-95" title="Défis du jour">
+      🎯
+    </button>
+  </div>
+  
+  <!-- Daily Challenges Floating Panel -->
+  <div id="challengesPanel" class="fixed top-24 right-4 z-[60] w-72 bg-white rounded-2xl shadow-xl hidden md:block overflow-hidden">
+    <div class="bg-gradient-to-r from-purple-500 to-pink-500 p-3">
+      <div class="flex items-center justify-between">
+        <h3 class="font-bold text-white flex items-center gap-2">
+          <span>🎯</span> Défis du jour
+        </h3>
+        <button onclick="toggleChallengesPanel()" class="text-white/80 hover:text-white">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+      <p class="text-purple-100 text-xs mt-1" id="challengesTimer">Renouvellement dans 12h</p>
+    </div>
+    <div id="challengesList" class="p-3 space-y-2 max-h-64 overflow-y-auto">
+      <!-- Challenges will be inserted here -->
+    </div>
+    <div class="p-3 border-t border-gray-100 bg-gray-50">
+      <div class="flex items-center justify-between text-sm">
+        <span class="text-gray-600">XP gagnés aujourd'hui</span>
+        <span class="font-bold text-purple-600" id="dailyXpCount">+0 XP</span>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Challenges Modal (Mobile + Full view) -->
+  <div id="challengesModal" class="fixed inset-0 bg-black/50 z-[150] hidden items-center justify-center p-4">
+    <div class="bg-white rounded-3xl w-full max-w-lg max-h-[85vh] overflow-hidden shadow-2xl">
+      <div class="bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-2xl font-black text-white">🎯 Défis du jour</h2>
+          <button onclick="closeChallengesModal()" class="p-2 hover:bg-white/20 rounded-full transition">
+            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          </button>
+        </div>
+        <div class="flex items-center gap-4">
+          <div class="bg-white/20 backdrop-blur rounded-xl p-3 text-center">
+            <p class="text-3xl font-black text-white" id="modalCompletedCount">0/3</p>
+            <p class="text-xs text-purple-100">Complétés</p>
+          </div>
+          <div class="bg-white/20 backdrop-blur rounded-xl p-3 text-center flex-1">
+            <p class="text-2xl font-black text-white" id="modalDailyXp">+0 XP</p>
+            <p class="text-xs text-purple-100">Gagnés aujourd'hui</p>
+          </div>
+          <div class="bg-white/20 backdrop-blur rounded-xl p-3 text-center">
+            <p class="text-lg font-bold text-white" id="modalTimer">12h</p>
+            <p class="text-xs text-purple-100">Restant</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="p-4 space-y-3 overflow-y-auto" style="max-height: 50vh;" id="modalChallengesList">
+        <!-- Challenges will be inserted here -->
+      </div>
+      
+      <!-- Streak bonus section -->
+      <div class="p-4 border-t border-gray-100 bg-gradient-to-r from-orange-50 to-yellow-50">
+        <div class="flex items-center gap-3">
+          <div class="text-4xl">🔥</div>
+          <div class="flex-1">
+            <p class="font-bold text-gray-800">Bonus Streak x<span id="streakMultiplier">1</span></p>
+            <p class="text-sm text-gray-500">Chaque jour de streak = +10% XP</p>
+          </div>
+          <div class="text-right">
+            <p class="text-2xl font-black text-orange-500" id="currentStreakDisplay">0</p>
+            <p class="text-xs text-gray-500">jours</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Leaderboard Modal -->
+  <div id="leaderboardModal" class="fixed inset-0 bg-black/50 z-[150] hidden items-center justify-center p-4">
+    <div class="bg-white rounded-3xl w-full max-w-lg max-h-[85vh] overflow-hidden shadow-2xl">
+      <div class="bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 p-6">
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="text-2xl font-black text-white">🏆 Classement</h2>
+          <button onclick="closeLeaderboardModal()" class="p-2 hover:bg-white/20 rounded-full transition">
+            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          </button>
+        </div>
+        <p class="text-yellow-100 text-sm">Compare-toi avec tes amis !</p>
+      </div>
+      
+      <!-- Tab navigation -->
+      <div class="flex border-b border-gray-200">
+        <button onclick="showLeaderboardTab('weekly')" id="tabWeekly" class="flex-1 py-3 font-medium text-amber-600 border-b-2 border-amber-500">Cette semaine</button>
+        <button onclick="showLeaderboardTab('alltime')" id="tabAlltime" class="flex-1 py-3 font-medium text-gray-400 hover:text-gray-600">Tout temps</button>
+      </div>
+      
+      <!-- Your rank -->
+      <div class="p-4 bg-gradient-to-r from-amber-50 to-yellow-50 border-b border-amber-100">
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-black text-xl" id="yourRank">?</div>
+          <div class="flex-1">
+            <p class="font-bold text-gray-800">Toi</p>
+            <p class="text-sm text-gray-500"><span id="yourXp">0</span> XP cette semaine</p>
+          </div>
+          <div class="text-right">
+            <p class="text-sm text-gray-500">Niveau</p>
+            <p class="text-xl font-black text-amber-600" id="yourLevel">1</p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Leaderboard list -->
+      <div class="p-4 space-y-2 overflow-y-auto" style="max-height: 40vh;" id="leaderboardList">
+        <!-- Fake leaderboard for demo -->
+      </div>
+      
+      <!-- Invite friends -->
+      <div class="p-4 border-t border-gray-100">
+        <button onclick="shareWithFriends()" class="w-full py-3 rounded-xl font-bold text-white bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 transition flex items-center justify-center gap-2">
+          <span>👥</span> Inviter des amis
+        </button>
+        <p class="text-center text-xs text-gray-400 mt-2">Gagne le badge 🤝 Parrain en invitant 3 amis !</p>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Challenge Complete Toast -->
+  <div id="challengeToast" class="fixed top-24 left-1/2 -translate-x-1/2 z-[200] hidden">
+    <div class="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 animate-bounce">
+      <div class="text-4xl" id="challengeToastIcon">🎯</div>
+      <div>
+        <p class="font-bold" id="challengeToastTitle">Défi complété !</p>
+        <p class="text-sm text-purple-100" id="challengeToastXp">+50 XP</p>
+      </div>
+    </div>
+  </div>
+
   <!-- Offline indicator -->
   <div id="offlineIndicator" class="fixed top-20 left-1/2 -translate-x-1/2 z-[100] hidden">
     <div class="bg-gray-800 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
       <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
       <span class="text-sm font-medium">Mode hors-ligne</span>
+    </div>
+  </div>
+
+  <!-- Onboarding Modal -->
+  <div id="onboardingModal" class="fixed inset-0 bg-gradient-to-br from-amber-400 via-orange-500 to-yellow-500 z-[200] hidden items-center justify-center">
+    <div class="max-w-md w-full mx-4">
+      <!-- Slides Container -->
+      <div id="onboardingSlides" class="relative overflow-hidden">
+        
+        <!-- Slide 1: Welcome -->
+        <div class="onboarding-slide" data-slide="0">
+          <div class="text-center p-8">
+            <div class="text-8xl mb-6">☀️</div>
+            <h1 class="text-3xl font-black text-white mb-4">Bienvenue sur<br>Spot The Sun !</h1>
+            <p class="text-amber-100 text-lg mb-8">Trouve les terrasses ensoleillées à Paris en temps réel</p>
+            <div class="bg-white/20 backdrop-blur rounded-2xl p-6 text-left">
+              <div class="flex items-center gap-4 mb-4">
+                <div class="w-12 h-12 rounded-full bg-yellow-400 flex items-center justify-center text-2xl">🗺️</div>
+                <div class="text-white">
+                  <p class="font-bold">3 721 bars</p>
+                  <p class="text-amber-100 text-sm">référencés à Paris</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-full bg-yellow-400 flex items-center justify-center text-2xl">🍺</div>
+                <div class="text-white">
+                  <p class="font-bold">1 934 terrasses</p>
+                  <p class="text-amber-100 text-sm">analysées en temps réel</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Slide 2: Features -->
+        <div class="onboarding-slide hidden" data-slide="1">
+          <div class="text-center p-8">
+            <div class="text-7xl mb-6">🎯</div>
+            <h2 class="text-2xl font-black text-white mb-4">Comment ça marche ?</h2>
+            <div class="space-y-4 text-left">
+              <div class="bg-white/20 backdrop-blur rounded-xl p-4 flex items-center gap-4">
+                <div class="w-10 h-10 rounded-full bg-yellow-400 flex items-center justify-center font-bold text-orange-800">1</div>
+                <div class="text-white">
+                  <p class="font-bold">Regarde la carte</p>
+                  <p class="text-amber-100 text-sm">Les points jaunes = terrasses au soleil ☀️</p>
+                </div>
+              </div>
+              <div class="bg-white/20 backdrop-blur rounded-xl p-4 flex items-center gap-4">
+                <div class="w-10 h-10 rounded-full bg-yellow-400 flex items-center justify-center font-bold text-orange-800">2</div>
+                <div class="text-white">
+                  <p class="font-bold">Simule une heure</p>
+                  <p class="text-amber-100 text-sm">Utilise le slider pour prévoir ta sortie</p>
+                </div>
+              </div>
+              <div class="bg-white/20 backdrop-blur rounded-xl p-4 flex items-center gap-4">
+                <div class="w-10 h-10 rounded-full bg-yellow-400 flex items-center justify-center font-bold text-orange-800">3</div>
+                <div class="text-white">
+                  <p class="font-bold">Fais un check-in</p>
+                  <p class="text-amber-100 text-sm">Gagne des XP et débloque des badges 🏆</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Slide 3: Badges -->
+        <div class="onboarding-slide hidden" data-slide="2">
+          <div class="text-center p-8">
+            <div class="text-7xl mb-6">🏆</div>
+            <h2 class="text-2xl font-black text-white mb-4">Collectionne les badges !</h2>
+            <p class="text-amber-100 mb-6">22 badges à débloquer en explorant Paris</p>
+            <div class="grid grid-cols-4 gap-3 mb-6">
+              <div class="bg-white/20 backdrop-blur rounded-xl p-3 text-center">
+                <div class="text-3xl mb-1">☀️</div>
+                <p class="text-xs text-white">Soleil</p>
+              </div>
+              <div class="bg-white/20 backdrop-blur rounded-xl p-3 text-center">
+                <div class="text-3xl mb-1">🐦</div>
+                <p class="text-xs text-white">Lève-tôt</p>
+              </div>
+              <div class="bg-white/20 backdrop-blur rounded-xl p-3 text-center">
+                <div class="text-3xl mb-1">🗺️</div>
+                <p class="text-xs text-white">Explorateur</p>
+              </div>
+              <div class="bg-white/20 backdrop-blur rounded-xl p-3 text-center">
+                <div class="text-3xl mb-1">🔥</div>
+                <p class="text-xs text-white">Streak</p>
+              </div>
+            </div>
+            <div class="bg-white/20 backdrop-blur rounded-xl p-4">
+              <p class="text-white font-medium">💡 Astuce</p>
+              <p class="text-amber-100 text-sm">Installe l'app sur ton écran d'accueil pour y accéder plus vite !</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation -->
+      <div class="px-8 pb-8">
+        <!-- Progress dots -->
+        <div class="flex justify-center gap-2 mb-6">
+          <div class="onboarding-dot w-2 h-2 rounded-full bg-white transition-all" data-dot="0"></div>
+          <div class="onboarding-dot w-2 h-2 rounded-full bg-white/40 transition-all" data-dot="1"></div>
+          <div class="onboarding-dot w-2 h-2 rounded-full bg-white/40 transition-all" data-dot="2"></div>
+        </div>
+        
+        <!-- Buttons -->
+        <div class="flex gap-3">
+          <button id="onboardingSkip" onclick="skipOnboarding()" class="flex-1 py-4 rounded-xl font-bold text-white/80 hover:text-white transition">
+            Passer
+          </button>
+          <button id="onboardingNext" onclick="nextOnboardingSlide()" class="flex-1 py-4 rounded-xl font-bold bg-white text-orange-600 hover:bg-amber-50 transition shadow-lg">
+            Suivant →
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -552,6 +984,43 @@
     let userLocation = null;
     let userMarker = null;
     let watchPositionId = null;
+    
+    // Map enhancements
+    let markerClusterer = null;
+    let heatmapLayer = null;
+    let directionsService = null;
+    let directionsRenderer = null;
+    let showHeatmap = false;
+    let showClusters = true;
+    
+    // Daily challenges system
+    let dailyChallenges = [];
+    const CHALLENGE_TYPES = [
+      { id: 'sunny_3', name: 'Chasseur de soleil', desc: 'Visite 3 bars au soleil', icon: '☀️', target: 3, type: 'sunny' },
+      { id: 'sunny_5', name: 'Expert solaire', desc: 'Visite 5 bars au soleil', icon: '🌟', target: 5, type: 'sunny' },
+      { id: 'bars_5', name: 'Explorateur', desc: 'Visite 5 bars différents', icon: '🗺️', target: 5, type: 'total' },
+      { id: 'bars_10', name: 'Grand explorateur', desc: 'Visite 10 bars différents', icon: '🏆', target: 10, type: 'total' },
+      { id: 'arrond_3', name: 'Voyageur', desc: 'Visite 3 arrondissements', icon: '🧭', target: 3, type: 'arrondissements' },
+      { id: 'early_bird', name: 'Lève-tôt', desc: 'Check-in avant 11h', icon: '🐦', target: 1, type: 'early' },
+      { id: 'golden_hour', name: 'Golden Hour', desc: 'Check-in entre 17h et 19h', icon: '🌇', target: 1, type: 'golden' },
+      { id: 'streak_keep', name: 'Régulier', desc: 'Maintiens ton streak', icon: '🔥', target: 1, type: 'streak' },
+      { id: 'distance_1km', name: 'Marcheur', desc: 'Marche 1km entre 2 bars', icon: '🚶', target: 1000, type: 'distance' },
+    ];
+    
+    // Daily progress tracking
+    let dailyProgress = {
+      date: null,
+      sunnyVisits: 0,
+      totalVisits: 0,
+      arrondissementsToday: new Set(),
+      earlyVisit: false,
+      goldenVisit: false,
+      streakKept: false,
+      distanceWalked: 0,
+      lastBarLocation: null,
+      completedChallenges: new Set(),
+      xpEarned: 0
+    };
 
     // ==========================================
     // BADGES DEFINITIONS
@@ -591,7 +1060,15 @@
       
       // Special badges
       shade_lover: { id: 'shade_lover', name: 'Ami de l\'Ombre', icon: '🌙', desc: '20 check-ins à l\'ombre', condition: s => s.shadeCheckins >= 20 },
-      weather_warrior: { id: 'weather_warrior', name: 'Guerrier Météo', icon: '🌧️', desc: 'Check-in par temps nuageux', condition: s => s.cloudyCheckins >= 1 }
+      weather_warrior: { id: 'weather_warrior', name: 'Guerrier Météo', icon: '🌧️', desc: 'Check-in par temps nuageux', condition: s => s.cloudyCheckins >= 1 },
+      
+      // Challenge badges
+      challenge_master: { id: 'challenge_master', name: 'Maître des Défis', icon: '🎯', desc: '10 défis complétés', condition: s => (s.challengesCompleted || 0) >= 10 },
+      daily_champion: { id: 'daily_champion', name: 'Champion du Jour', icon: '🏅', desc: 'Tous les défis en 1 jour', condition: s => s.perfectDayCount >= 1 },
+      
+      // Social badges
+      social_butterfly: { id: 'social_butterfly', name: 'Papillon Social', icon: '🦋', desc: 'Partager l\'app', condition: s => s.shareCount >= 1 },
+      recruiter: { id: 'recruiter', name: 'Parrain', icon: '🤝', desc: 'Inviter 3 amis', condition: s => (s.referralCount || 0) >= 3 }
     };
     
     // Initialize extra counters
@@ -911,6 +1388,18 @@
       
       map = new google.maps.Map(document.getElementById('map'), mapOptions);
       
+      // Initialize Directions Service
+      directionsService = new google.maps.DirectionsService();
+      directionsRenderer = new google.maps.DirectionsRenderer({
+        suppressMarkers: true,
+        polylineOptions: {
+          strokeColor: '#f59e0b',
+          strokeWeight: 5,
+          strokeOpacity: 0.8
+        }
+      });
+      directionsRenderer.setMap(map);
+      
       // Enable tilt and rotation controls
       map.setTilt(45);
       
@@ -1107,6 +1596,11 @@
       // Clear existing markers
       markers.forEach(m => m.setMap(null));
       markers = [];
+      
+      // Clear clusterer if exists
+      if (markerClusterer) {
+        markerClusterer.clearMarkers();
+      }
 
       const filteredBars = getFilteredBars();
       
@@ -1115,17 +1609,28 @@
       const barsToShow = filteredBars.length > maxMarkers 
         ? filteredBars.slice(0, maxMarkers) 
         : filteredBars;
+      
+      // Prepare heatmap data
+      const heatmapData = [];
 
       barsToShow.forEach(bar => {
         const status = getBarSunStatus(bar);
         const color = getMarkerColor(status);
         const score = getSunshineScore(bar);
         const isSunny = status === 'sunny';
+        
+        // Add to heatmap data if sunny
+        if (bar.hasTerrasse && score > 0) {
+          heatmapData.push({
+            location: new google.maps.LatLng(bar.lat, bar.lng),
+            weight: score / 100
+          });
+        }
 
         // Create custom marker
         const marker = new google.maps.Marker({
           position: { lat: bar.lat, lng: bar.lng },
-          map: map,
+          map: showClusters ? null : map, // Don't add to map if clustering
           icon: {
             path: google.maps.SymbolPath.CIRCLE,
             scale: isSunny ? 12 : 8,
@@ -1155,8 +1660,8 @@
               <button onclick="showBarDetail(${bar.id})" style="flex: 1; padding: 6px 12px; background: linear-gradient(to right, #9333ea, #ec4899); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 12px;">
                 Détails
               </button>
-              <button onclick="openDirections(BARS_DATA.find(b => b.id === ${bar.id}))" style="padding: 6px 12px; background: #3B82F6; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 12px;">
-                🧭 Y aller
+              <button onclick="showRouteToBar(BARS_DATA.find(b => b.id === ${bar.id}))" style="padding: 6px 12px; background: #3B82F6; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 12px;">
+                🧭 Trajet
               </button>
             </div>
           </div>
@@ -1170,6 +1675,623 @@
 
         markers.push(marker);
       });
+      
+      // Setup marker clusterer
+      if (showClusters && typeof markerClusterer !== 'undefined') {
+        setupMarkerClusterer();
+      } else {
+        // Show markers directly if no clustering
+        markers.forEach(m => m.setMap(map));
+      }
+      
+      // Update heatmap
+      updateHeatmapLayer(heatmapData);
+    }
+    
+    // ==========================================
+    // MARKER CLUSTERING
+    // ==========================================
+    function setupMarkerClusterer() {
+      if (markerClusterer) {
+        markerClusterer.clearMarkers();
+      }
+      
+      // Check if MarkerClusterer library is loaded
+      if (typeof markerClusterer === 'undefined' && window.markerClusterer) {
+        // Library loaded via CDN
+      }
+      
+      try {
+        markerClusterer = new markerClusterer.MarkerClusterer({
+          map: map,
+          markers: markers,
+          renderer: {
+            render: ({ count, position }) => {
+              // Custom cluster icon based on count
+              const size = count > 50 ? 50 : (count > 20 ? 40 : 30);
+              const color = count > 50 ? '#ef4444' : (count > 20 ? '#f59e0b' : '#22c55e');
+              
+              return new google.maps.Marker({
+                position,
+                icon: {
+                  path: google.maps.SymbolPath.CIRCLE,
+                  scale: size / 2,
+                  fillColor: color,
+                  fillOpacity: 0.9,
+                  strokeColor: '#fff',
+                  strokeWeight: 3,
+                },
+                label: {
+                  text: String(count),
+                  color: '#fff',
+                  fontWeight: 'bold',
+                  fontSize: '12px'
+                },
+                zIndex: 1000 + count
+              });
+            }
+          }
+        });
+      } catch (e) {
+        // Fallback: show markers without clustering
+        console.log('Clustering not available, showing all markers');
+        markers.forEach(m => m.setMap(map));
+      }
+    }
+    
+    function toggleClusters() {
+      showClusters = !showClusters;
+      
+      if (showClusters) {
+        setupMarkerClusterer();
+      } else {
+        if (markerClusterer) {
+          markerClusterer.clearMarkers();
+        }
+        markers.forEach(m => m.setMap(map));
+      }
+      
+      // Update button state
+      const btn = document.getElementById('clusterToggle');
+      if (btn) {
+        btn.classList.toggle('bg-amber-500', showClusters);
+        btn.classList.toggle('text-white', showClusters);
+        btn.classList.toggle('bg-white', !showClusters);
+        btn.classList.toggle('text-gray-700', !showClusters);
+      }
+      
+      triggerHaptic('light');
+    }
+    
+    // ==========================================
+    // HEATMAP LAYER
+    // ==========================================
+    function updateHeatmapLayer(data) {
+      // Remove existing heatmap
+      if (heatmapLayer) {
+        heatmapLayer.setMap(null);
+      }
+      
+      if (!showHeatmap || data.length === 0) return;
+      
+      heatmapLayer = new google.maps.visualization.HeatmapLayer({
+        data: data,
+        map: map,
+        radius: 50,
+        opacity: 0.6,
+        gradient: [
+          'rgba(255, 255, 255, 0)',
+          'rgba(255, 237, 179, 0.5)',
+          'rgba(253, 224, 71, 0.7)',
+          'rgba(250, 204, 21, 0.8)',
+          'rgba(245, 158, 11, 0.9)',
+          'rgba(234, 88, 12, 1)'
+        ]
+      });
+    }
+    
+    function toggleHeatmap() {
+      showHeatmap = !showHeatmap;
+      createMarkers(); // Refresh to show/hide heatmap
+      
+      // Update button state
+      const btn = document.getElementById('heatmapToggle');
+      if (btn) {
+        btn.classList.toggle('bg-amber-500', showHeatmap);
+        btn.classList.toggle('text-white', showHeatmap);
+        btn.classList.toggle('bg-white', !showHeatmap);
+        btn.classList.toggle('text-gray-700', !showHeatmap);
+      }
+      
+      triggerHaptic('light');
+    }
+    
+    // ==========================================
+    // DIRECTIONS / ROUTE ON MAP
+    // ==========================================
+    function showRouteToBar(bar) {
+      if (!bar) return;
+      
+      if (!userLocation) {
+        alert('Activez la géolocalisation pour voir l\'itinéraire');
+        initGeolocation();
+        return;
+      }
+      
+      const request = {
+        origin: new google.maps.LatLng(userLocation.lat, userLocation.lng),
+        destination: new google.maps.LatLng(bar.lat, bar.lng),
+        travelMode: google.maps.TravelMode.WALKING
+      };
+      
+      directionsService.route(request, (result, status) => {
+        if (status === google.maps.DirectionsStatus.OK) {
+          directionsRenderer.setDirections(result);
+          
+          // Show route info
+          const route = result.routes[0].legs[0];
+          showRouteInfo(bar, route);
+          
+          triggerHaptic('success');
+        } else {
+          console.error('Directions request failed:', status);
+          // Fallback to Google Maps
+          openDirections(bar);
+        }
+      });
+    }
+    
+    function showRouteInfo(bar, route) {
+      // Show clear route button
+      const clearBtn = document.getElementById('clearRouteBtn');
+      if (clearBtn) clearBtn.classList.remove('hidden');
+      
+      // Create or update route info panel
+      let routePanel = document.getElementById('routeInfoPanel');
+      
+      if (!routePanel) {
+        routePanel = document.createElement('div');
+        routePanel.id = 'routeInfoPanel';
+        routePanel.className = 'fixed bottom-20 left-4 right-4 md:left-auto md:right-4 md:w-80 z-[60] bg-white rounded-2xl shadow-2xl p-4 transform transition-all';
+        document.body.appendChild(routePanel);
+      }
+      
+      const status = getBarSunStatus(bar);
+      const color = getMarkerColor(status);
+      
+      routePanel.innerHTML = `
+        <div class="flex items-start justify-between mb-3">
+          <div>
+            <h3 class="font-bold text-gray-800">${bar.name}</h3>
+            <p class="text-sm" style="color: ${color}">${getStatusLabel(status)}</p>
+          </div>
+          <button onclick="clearRoute()" class="p-2 hover:bg-gray-100 rounded-full">
+            <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          </button>
+        </div>
+        <div class="flex items-center gap-4 mb-4">
+          <div class="flex items-center gap-2 text-gray-600">
+            <span class="text-xl">🚶</span>
+            <div>
+              <p class="font-bold text-lg text-gray-800">${route.duration.text}</p>
+              <p class="text-sm text-gray-500">${route.distance.text}</p>
+            </div>
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="showBarDetail(${bar.id})" class="flex-1 py-3 rounded-xl font-bold text-amber-600 bg-amber-50 hover:bg-amber-100 transition">
+            Voir détails
+          </button>
+          <button onclick="openDirections(BARS_DATA.find(b => b.id === ${bar.id}))" class="flex-1 py-3 rounded-xl font-bold text-white bg-blue-500 hover:bg-blue-600 transition">
+            Google Maps
+          </button>
+        </div>
+      `;
+      
+      routePanel.style.display = 'block';
+    }
+    
+    function clearRoute() {
+      if (directionsRenderer) {
+        directionsRenderer.setDirections({ routes: [] });
+      }
+      
+      const routePanel = document.getElementById('routeInfoPanel');
+      if (routePanel) {
+        routePanel.style.display = 'none';
+      }
+      
+      // Hide clear route button
+      const clearBtn = document.getElementById('clearRouteBtn');
+      if (clearBtn) clearBtn.classList.add('hidden');
+      
+      triggerHaptic('light');
+    }
+    
+    // ==========================================
+    // DAILY CHALLENGES SYSTEM
+    // ==========================================
+    function initDailyChallenges() {
+      const today = new Date().toDateString();
+      const savedProgress = localStorage.getItem('spotTheSun_dailyProgress');
+      
+      if (savedProgress) {
+        const parsed = JSON.parse(savedProgress);
+        if (parsed.date === today) {
+          dailyProgress = {
+            ...parsed,
+            arrondissementsToday: new Set(parsed.arrondissementsToday || []),
+            completedChallenges: new Set(parsed.completedChallenges || [])
+          };
+        } else {
+          // New day, reset progress
+          resetDailyProgress();
+        }
+      } else {
+        resetDailyProgress();
+      }
+      
+      // Generate today's challenges (3 random ones)
+      generateDailyChallenges();
+      updateChallengesUI();
+    }
+    
+    function resetDailyProgress() {
+      dailyProgress = {
+        date: new Date().toDateString(),
+        sunnyVisits: 0,
+        totalVisits: 0,
+        arrondissementsToday: new Set(),
+        earlyVisit: false,
+        goldenVisit: false,
+        streakKept: false,
+        distanceWalked: 0,
+        lastBarLocation: null,
+        completedChallenges: new Set(),
+        xpEarned: 0
+      };
+      saveDailyProgress();
+    }
+    
+    function saveDailyProgress() {
+      const toSave = {
+        ...dailyProgress,
+        arrondissementsToday: Array.from(dailyProgress.arrondissementsToday),
+        completedChallenges: Array.from(dailyProgress.completedChallenges)
+      };
+      localStorage.setItem('spotTheSun_dailyProgress', JSON.stringify(toSave));
+    }
+    
+    function generateDailyChallenges() {
+      // Use date as seed for consistent daily challenges
+      const seed = new Date().toDateString();
+      const shuffled = [...CHALLENGE_TYPES].sort(() => {
+        return seed.charCodeAt(0) + seed.charCodeAt(1) - 0.5;
+      });
+      
+      // Pick 3 challenges
+      dailyChallenges = shuffled.slice(0, 3).map(c => ({
+        ...c,
+        progress: 0,
+        completed: dailyProgress.completedChallenges.has(c.id),
+        xpReward: c.target >= 5 ? 100 : 50
+      }));
+      
+      updateChallengeProgress();
+    }
+    
+    function updateChallengeProgress() {
+      dailyChallenges.forEach(challenge => {
+        switch(challenge.type) {
+          case 'sunny':
+            challenge.progress = dailyProgress.sunnyVisits;
+            break;
+          case 'total':
+            challenge.progress = dailyProgress.totalVisits;
+            break;
+          case 'arrondissements':
+            challenge.progress = dailyProgress.arrondissementsToday.size;
+            break;
+          case 'early':
+            challenge.progress = dailyProgress.earlyVisit ? 1 : 0;
+            break;
+          case 'golden':
+            challenge.progress = dailyProgress.goldenVisit ? 1 : 0;
+            break;
+          case 'streak':
+            challenge.progress = userStats.streak > 0 ? 1 : 0;
+            break;
+          case 'distance':
+            challenge.progress = dailyProgress.distanceWalked;
+            break;
+        }
+        
+        // Check completion
+        if (!challenge.completed && challenge.progress >= challenge.target) {
+          completeChallenge(challenge);
+        }
+      });
+    }
+    
+    function completeChallenge(challenge) {
+      if (challenge.completed) return;
+      
+      challenge.completed = true;
+      dailyProgress.completedChallenges.add(challenge.id);
+      
+      // Track total challenges completed for badge
+      userStats.challengesCompleted = (userStats.challengesCompleted || 0) + 1;
+      
+      // Check if all daily challenges completed (perfect day)
+      const allCompleted = dailyChallenges.every(c => c.completed);
+      if (allCompleted) {
+        userStats.perfectDayCount = (userStats.perfectDayCount || 0) + 1;
+      }
+      
+      // Apply streak multiplier
+      const multiplier = 1 + (userStats.streak * 0.1);
+      const xpEarned = Math.round(challenge.xpReward * multiplier);
+      
+      // Award XP
+      userStats.xp += xpEarned;
+      dailyProgress.xpEarned += xpEarned;
+      
+      // Check level up
+      const newLevel = Math.floor(userStats.xp / 500) + 1;
+      if (newLevel > userStats.level) {
+        userStats.level = newLevel;
+        showLevelUpToast(newLevel);
+      }
+      
+      // Show completion toast
+      showChallengeCompleteToast(challenge, xpEarned);
+      
+      // Haptic feedback
+      triggerHaptic('success');
+      
+      saveUserStats();
+      saveDailyProgress();
+      updateChallengesUI();
+      updateUI();
+    }
+    
+    function showChallengeCompleteToast(challenge, xp) {
+      const toast = document.getElementById('challengeToast');
+      document.getElementById('challengeToastIcon').textContent = challenge.icon;
+      document.getElementById('challengeToastTitle').textContent = challenge.name + ' complété !';
+      document.getElementById('challengeToastXp').textContent = '+' + xp + ' XP';
+      
+      toast.classList.remove('hidden');
+      
+      setTimeout(() => {
+        toast.classList.add('hidden');
+      }, 3000);
+    }
+    
+    function showLevelUpToast(level) {
+      // Reuse badge toast for level up
+      const toast = document.getElementById('badgeToast');
+      if (toast) {
+        document.getElementById('badgeToastIcon').textContent = '⬆️';
+        document.getElementById('badgeToastName').textContent = 'Niveau ' + level + ' !';
+        document.getElementById('badgeToastDesc').textContent = 'Tu progresses !';
+        toast.classList.remove('hidden');
+        setTimeout(() => toast.classList.add('hidden'), 3000);
+      }
+    }
+    
+    function updateChallengesUI() {
+      // Update floating panel
+      const listContainer = document.getElementById('challengesList');
+      const modalList = document.getElementById('modalChallengesList');
+      
+      const challengesHTML = dailyChallenges.map(c => {
+        const percent = Math.min((c.progress / c.target) * 100, 100);
+        return `
+          <div class="bg-gray-50 rounded-xl p-3 ${c.completed ? 'ring-2 ring-green-400 bg-green-50' : ''}">
+            <div class="flex items-center gap-3">
+              <div class="text-2xl">${c.icon}</div>
+              <div class="flex-1 min-w-0">
+                <p class="font-bold text-sm text-gray-800 ${c.completed ? 'line-through text-green-600' : ''}">${c.name}</p>
+                <p class="text-xs text-gray-500">${c.desc}</p>
+              </div>
+              <div class="text-right">
+                <p class="text-xs font-bold ${c.completed ? 'text-green-500' : 'text-purple-600'}">${c.completed ? '✅' : '+' + c.xpReward + ' XP'}</p>
+              </div>
+            </div>
+            <div class="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div class="h-full rounded-full transition-all duration-500 ${c.completed ? 'bg-green-400' : 'bg-gradient-to-r from-purple-500 to-pink-500'}" style="width: ${percent}%"></div>
+            </div>
+            <p class="text-xs text-gray-400 mt-1 text-right">${Math.min(c.progress, c.target)}/${c.target}</p>
+          </div>
+        `;
+      }).join('');
+      
+      if (listContainer) listContainer.innerHTML = challengesHTML;
+      if (modalList) modalList.innerHTML = challengesHTML;
+      
+      // Update counts
+      const completed = dailyChallenges.filter(c => c.completed).length;
+      document.getElementById('modalCompletedCount').textContent = `${completed}/${dailyChallenges.length}`;
+      document.getElementById('modalDailyXp').textContent = `+${dailyProgress.xpEarned} XP`;
+      document.getElementById('dailyXpCount').textContent = `+${dailyProgress.xpEarned} XP`;
+      
+      // Update streak display
+      document.getElementById('currentStreakDisplay').textContent = userStats.streak || 0;
+      document.getElementById('streakMultiplier').textContent = (1 + (userStats.streak * 0.1)).toFixed(1);
+      
+      // Update timer
+      updateChallengeTimer();
+    }
+    
+    function updateChallengeTimer() {
+      const now = new Date();
+      const midnight = new Date(now);
+      midnight.setHours(24, 0, 0, 0);
+      const hoursLeft = Math.ceil((midnight - now) / (1000 * 60 * 60));
+      
+      const timerText = hoursLeft + 'h restant';
+      const timerEl = document.getElementById('challengesTimer');
+      const modalTimer = document.getElementById('modalTimer');
+      
+      if (timerEl) timerEl.textContent = 'Renouvellement dans ' + hoursLeft + 'h';
+      if (modalTimer) modalTimer.textContent = hoursLeft + 'h';
+    }
+    
+    function toggleChallengesPanel() {
+      const panel = document.getElementById('challengesPanel');
+      panel.classList.toggle('hidden');
+    }
+    
+    function showChallengesModal() {
+      document.getElementById('challengesModal').classList.remove('hidden');
+      document.getElementById('challengesModal').classList.add('flex');
+      updateChallengesUI();
+      triggerHaptic('light');
+    }
+    
+    function closeChallengesModal() {
+      document.getElementById('challengesModal').classList.add('hidden');
+      document.getElementById('challengesModal').classList.remove('flex');
+    }
+    
+    // Update checkin to track daily progress
+    function trackDailyCheckin(bar, isSunny) {
+      dailyProgress.totalVisits++;
+      
+      if (isSunny) {
+        dailyProgress.sunnyVisits++;
+      }
+      
+      // Track arrondissement
+      const arr = getArrondissement(bar.lat, bar.lng);
+      if (arr) {
+        dailyProgress.arrondissementsToday.add(arr);
+      }
+      
+      // Track time-based
+      const hour = new Date().getHours();
+      if (hour < 11) {
+        dailyProgress.earlyVisit = true;
+      }
+      if (hour >= 17 && hour < 19) {
+        dailyProgress.goldenVisit = true;
+      }
+      
+      // Track distance
+      if (dailyProgress.lastBarLocation && userLocation) {
+        const dist = getDistanceFromUser(dailyProgress.lastBarLocation);
+        if (dist) {
+          dailyProgress.distanceWalked += dist;
+        }
+      }
+      dailyProgress.lastBarLocation = { lat: bar.lat, lng: bar.lng };
+      
+      saveDailyProgress();
+      updateChallengeProgress();
+      updateChallengesUI();
+    }
+    
+    // ==========================================
+    // LEADERBOARD SYSTEM
+    // ==========================================
+    function showLeaderboardModal() {
+      document.getElementById('leaderboardModal').classList.remove('hidden');
+      document.getElementById('leaderboardModal').classList.add('flex');
+      updateLeaderboard('weekly');
+      triggerHaptic('light');
+    }
+    
+    function closeLeaderboardModal() {
+      document.getElementById('leaderboardModal').classList.add('hidden');
+      document.getElementById('leaderboardModal').classList.remove('flex');
+    }
+    
+    function showLeaderboardTab(tab) {
+      document.getElementById('tabWeekly').classList.toggle('text-amber-600', tab === 'weekly');
+      document.getElementById('tabWeekly').classList.toggle('border-amber-500', tab === 'weekly');
+      document.getElementById('tabWeekly').classList.toggle('border-b-2', tab === 'weekly');
+      document.getElementById('tabWeekly').classList.toggle('text-gray-400', tab !== 'weekly');
+      
+      document.getElementById('tabAlltime').classList.toggle('text-amber-600', tab === 'alltime');
+      document.getElementById('tabAlltime').classList.toggle('border-amber-500', tab === 'alltime');
+      document.getElementById('tabAlltime').classList.toggle('border-b-2', tab === 'alltime');
+      document.getElementById('tabAlltime').classList.toggle('text-gray-400', tab !== 'alltime');
+      
+      updateLeaderboard(tab);
+    }
+    
+    function updateLeaderboard(tab) {
+      // Generate fake leaderboard (in real app, this would be from a server)
+      const fakeUsers = [
+        { name: 'SunSeeker42', xp: 3250, level: 7, avatar: '😎' },
+        { name: 'ParisLover', xp: 2890, level: 6, avatar: '🗼' },
+        { name: 'TerrasseKing', xp: 2450, level: 5, avatar: '👑' },
+        { name: 'GoldenHour', xp: 2100, level: 5, avatar: '🌅' },
+        { name: 'BarHopper', xp: 1850, level: 4, avatar: '🍺' },
+        { name: 'SunChaser', xp: 1620, level: 4, avatar: '☀️' },
+        { name: 'CaféCrawler', xp: 1400, level: 3, avatar: '☕' },
+        { name: 'NightOwl', xp: 1200, level: 3, avatar: '🦉' },
+      ];
+      
+      // Insert user somewhere
+      const userXp = userStats.xp || 0;
+      let userRank = 1;
+      for (const u of fakeUsers) {
+        if (userXp < u.xp) userRank++;
+      }
+      
+      document.getElementById('yourRank').textContent = userRank;
+      document.getElementById('yourXp').textContent = userXp;
+      document.getElementById('yourLevel').textContent = userStats.level || 1;
+      
+      const listContainer = document.getElementById('leaderboardList');
+      listContainer.innerHTML = fakeUsers.map((u, i) => {
+        const rankColors = ['bg-yellow-400', 'bg-gray-300', 'bg-orange-400'];
+        const rankColor = i < 3 ? rankColors[i] : 'bg-gray-100';
+        
+        return `
+          <div class="flex items-center gap-3 p-3 rounded-xl ${i < 3 ? 'bg-gradient-to-r from-yellow-50 to-orange-50' : 'bg-gray-50'}">
+            <div class="w-8 h-8 rounded-full ${rankColor} flex items-center justify-center font-bold text-sm ${i < 3 ? 'text-white' : 'text-gray-600'}">
+              ${i + 1}
+            </div>
+            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-xl">
+              ${u.avatar}
+            </div>
+            <div class="flex-1">
+              <p class="font-bold text-gray-800">${u.name}</p>
+              <p class="text-xs text-gray-500">Niveau ${u.level}</p>
+            </div>
+            <div class="text-right">
+              <p class="font-bold text-amber-600">${u.xp}</p>
+              <p class="text-xs text-gray-400">XP</p>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+    
+    function shareWithFriends() {
+      const shareData = {
+        title: 'Spot The Sun ☀️',
+        text: 'Rejoins-moi sur Spot The Sun et trouve les meilleures terrasses ensoleillées de Paris !',
+        url: window.location.href
+      };
+      
+      // Track share for badge
+      userStats.shareCount = (userStats.shareCount || 0) + 1;
+      checkBadges();
+      saveUserStats();
+      
+      if (navigator.share) {
+        navigator.share(shareData).catch(console.error);
+      } else {
+        // Fallback: copy to clipboard
+        navigator.clipboard.writeText(shareData.url + ' - ' + shareData.text);
+        alert('Lien copié ! Partage-le avec tes amis 🎉');
+      }
+      
+      triggerHaptic('success');
     }
 
     function getFilteredBars() {
@@ -1568,6 +2690,12 @@
       // Check for new badges
       checkBadges();
       
+      // Track daily challenge progress
+      trackDailyCheckin(bar, status === 'sunny');
+      
+      // Haptic feedback for check-in
+      triggerHaptic('success');
+      
       // Update UI
       updateUI();
       updateBadgeCount();
@@ -1877,6 +3005,484 @@
     });
 
     // ==========================================
+    // ONBOARDING
+    // ==========================================
+    let currentOnboardingSlide = 0;
+    const totalSlides = 3;
+    
+    function showOnboarding() {
+      // Check if user has seen onboarding before
+      if (localStorage.getItem('spotTheSun_onboardingDone')) {
+        return;
+      }
+      
+      const modal = document.getElementById('onboardingModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      currentOnboardingSlide = 0;
+      updateOnboardingUI();
+    }
+    
+    function nextOnboardingSlide() {
+      const currentSlide = document.querySelector(`.onboarding-slide[data-slide="${currentOnboardingSlide}"]`);
+      
+      if (currentOnboardingSlide < totalSlides - 1) {
+        // Animate out current slide
+        currentSlide.classList.add('slide-out');
+        
+        setTimeout(() => {
+          currentSlide.classList.add('hidden');
+          currentSlide.classList.remove('slide-out');
+          
+          currentOnboardingSlide++;
+          
+          // Show next slide
+          const nextSlide = document.querySelector(`.onboarding-slide[data-slide="${currentOnboardingSlide}"]`);
+          nextSlide.classList.remove('hidden');
+          nextSlide.classList.add('slide-in');
+          
+          setTimeout(() => nextSlide.classList.remove('slide-in'), 400);
+          
+          updateOnboardingUI();
+        }, 300);
+      } else {
+        // Last slide - finish onboarding
+        finishOnboarding();
+      }
+    }
+    
+    function skipOnboarding() {
+      finishOnboarding();
+    }
+    
+    function finishOnboarding() {
+      localStorage.setItem('spotTheSun_onboardingDone', 'true');
+      
+      const modal = document.getElementById('onboardingModal');
+      modal.style.transition = 'opacity 0.5s ease-out';
+      modal.style.opacity = '0';
+      
+      setTimeout(() => {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        modal.style.opacity = '1';
+      }, 500);
+    }
+    
+    function updateOnboardingUI() {
+      // Update dots
+      document.querySelectorAll('.onboarding-dot').forEach((dot, index) => {
+        if (index === currentOnboardingSlide) {
+          dot.classList.remove('bg-white/40');
+          dot.classList.add('bg-white', 'w-6');
+        } else {
+          dot.classList.add('bg-white/40');
+          dot.classList.remove('bg-white', 'w-6');
+          dot.classList.add('w-2');
+        }
+      });
+      
+      // Update button text
+      const nextBtn = document.getElementById('onboardingNext');
+      if (currentOnboardingSlide === totalSlides - 1) {
+        nextBtn.textContent = "C'est parti ! ☀️";
+      } else {
+        nextBtn.textContent = 'Suivant →';
+      }
+    }
+    
+    // Reset onboarding (for testing)
+    function resetOnboarding() {
+      localStorage.removeItem('spotTheSun_onboardingDone');
+      location.reload();
+    }
+    
+    // Swipe support for onboarding
+    let touchStartX = 0;
+    let touchEndX = 0;
+    
+    document.addEventListener('touchstart', (e) => {
+      if (document.getElementById('onboardingModal').classList.contains('flex')) {
+        touchStartX = e.changedTouches[0].screenX;
+      }
+    });
+    
+    document.addEventListener('touchend', (e) => {
+      if (document.getElementById('onboardingModal').classList.contains('flex')) {
+        touchEndX = e.changedTouches[0].screenX;
+        handleSwipe();
+      }
+    });
+    
+    function handleSwipe() {
+      const swipeThreshold = 50;
+      const diff = touchStartX - touchEndX;
+      
+      if (diff > swipeThreshold) {
+        // Swipe left - next slide
+        nextOnboardingSlide();
+      } else if (diff < -swipeThreshold && currentOnboardingSlide > 0) {
+        // Swipe right - previous slide (optional)
+        prevOnboardingSlide();
+      }
+    }
+    
+    function prevOnboardingSlide() {
+      if (currentOnboardingSlide <= 0) return;
+      
+      const currentSlide = document.querySelector(`.onboarding-slide[data-slide="${currentOnboardingSlide}"]`);
+      currentSlide.classList.add('hidden');
+      
+      currentOnboardingSlide--;
+      
+      const prevSlide = document.querySelector(`.onboarding-slide[data-slide="${currentOnboardingSlide}"]`);
+      prevSlide.classList.remove('hidden');
+      
+      updateOnboardingUI();
+    }
+
+    // ==========================================
+    // MOBILE BOTTOM SHEET
+    // ==========================================
+    let bottomSheetOpen = false;
+    let bottomSheetView = 'list'; // 'list' or 'swipe'
+    let swipeCardIndex = 0;
+    let swipeCardBars = [];
+    
+    function openBottomSheet() {
+      const sheet = document.getElementById('bottomSheet');
+      sheet.classList.add('open');
+      bottomSheetOpen = true;
+      document.body.style.overflow = 'hidden';
+      updateBottomSheet();
+      triggerHaptic('light');
+    }
+    
+    function closeBottomSheet() {
+      const sheet = document.getElementById('bottomSheet');
+      sheet.classList.remove('open');
+      bottomSheetOpen = false;
+      document.body.style.overflow = '';
+      triggerHaptic('light');
+    }
+    
+    function updateBottomSheet() {
+      const bars = getFilteredBars();
+      const sortBy = document.getElementById('sortSelect')?.value || 'sun';
+      
+      let sortedBars = [...bars];
+      switch(sortBy) {
+        case 'distance':
+          if (userLocation) {
+            sortedBars.sort((a, b) => (getDistanceFromUser(a) || Infinity) - (getDistanceFromUser(b) || Infinity));
+          }
+          break;
+        case 'rating':
+          sortedBars.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+          break;
+        default:
+          sortedBars.sort((a, b) => getSunshineScore(b) - getSunshineScore(a));
+      }
+      
+      // Update count
+      document.getElementById('bottomSheetCount').textContent = `${sortedBars.length} résultats`;
+      
+      // Update list view
+      const listContainer = document.getElementById('bottomSheetList');
+      listContainer.innerHTML = sortedBars.slice(0, 20).map(bar => {
+        const status = getBarSunStatus(bar);
+        const score = getSunshineScore(bar);
+        const color = getMarkerColor(status);
+        const distance = getDistanceFromUser(bar);
+        const distanceText = formatDistance(distance);
+        const isSunny = status === 'sunny';
+        
+        return `
+          <div onclick="showBarDetail(${bar.id}); closeBottomSheet();" class="flex items-center gap-3 p-3 mb-2 rounded-xl bg-gray-50 active:bg-gray-100 transition cursor-pointer ${isSunny ? 'ring-2 ring-yellow-400' : ''}">
+            <div class="w-10 h-10 rounded-full flex items-center justify-center text-white text-lg" style="background-color: ${color}">
+              ${isSunny ? '☀️' : (bar.hasTerrasse ? '🌥️' : '🏠')}
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="font-bold text-gray-800 truncate">${bar.name}</p>
+              <div class="flex items-center gap-2 text-xs text-gray-500">
+                <span>⭐ ${bar.rating || '-'}</span>
+                ${distanceText ? `<span>📍 ${distanceText}</span>` : ''}
+                ${bar.hasTerrasse && score > 0 ? `<span class="text-yellow-600 font-medium">${score}%</span>` : ''}
+              </div>
+            </div>
+            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+          </div>
+        `;
+      }).join('');
+      
+      // Update swipe cards
+      swipeCardBars = sortedBars.slice(0, 20);
+      swipeCardIndex = 0;
+      renderSwipeCards();
+    }
+    
+    function toggleBottomSheetView(view) {
+      bottomSheetView = view;
+      
+      document.getElementById('bottomSheetList').classList.toggle('hidden', view !== 'list');
+      document.getElementById('swipeCardsContainer').classList.toggle('hidden', view !== 'swipe');
+      
+      document.getElementById('viewListBtn').classList.toggle('bg-amber-500', view === 'list');
+      document.getElementById('viewListBtn').classList.toggle('text-white', view === 'list');
+      document.getElementById('viewListBtn').classList.toggle('bg-gray-100', view !== 'list');
+      document.getElementById('viewListBtn').classList.toggle('text-gray-700', view !== 'list');
+      
+      document.getElementById('viewSwipeBtn').classList.toggle('bg-amber-500', view === 'swipe');
+      document.getElementById('viewSwipeBtn').classList.toggle('text-white', view === 'swipe');
+      document.getElementById('viewSwipeBtn').classList.toggle('bg-gray-100', view !== 'swipe');
+      document.getElementById('viewSwipeBtn').classList.toggle('text-gray-700', view !== 'swipe');
+      
+      if (view === 'swipe') {
+        renderSwipeCards();
+      }
+      
+      triggerHaptic('light');
+    }
+    
+    // ==========================================
+    // SWIPE CARDS (Tinder-style)
+    // ==========================================
+    function renderSwipeCards() {
+      const container = document.getElementById('swipeCards');
+      container.innerHTML = '';
+      
+      // Render up to 3 cards (stacked)
+      for (let i = Math.min(swipeCardIndex + 2, swipeCardBars.length - 1); i >= swipeCardIndex; i--) {
+        const bar = swipeCardBars[i];
+        if (!bar) continue;
+        
+        const status = getBarSunStatus(bar);
+        const score = getSunshineScore(bar);
+        const color = getMarkerColor(status);
+        const distance = getDistanceFromUser(bar);
+        const distanceText = formatDistance(distance);
+        const isTop = i === swipeCardIndex;
+        const offset = i - swipeCardIndex;
+        
+        const card = document.createElement('div');
+        card.className = 'swipe-card';
+        card.style.zIndex = 10 - offset;
+        card.style.transform = `scale(${1 - offset * 0.05}) translateY(${offset * 10}px)`;
+        card.dataset.barId = bar.id;
+        
+        card.innerHTML = `
+          <div class="swipe-card-overlay left">👎</div>
+          <div class="swipe-card-overlay right">☀️</div>
+          <div class="h-full flex flex-col">
+            <div class="flex-1 flex items-center justify-center text-6xl" style="background: linear-gradient(135deg, ${color}33, ${color}11)">
+              ${status === 'sunny' ? '☀️' : (bar.hasTerrasse ? '🌥️' : '🏠')}
+            </div>
+            <div class="p-4">
+              <h3 class="font-bold text-xl text-gray-800 mb-1">${bar.name}</h3>
+              <p class="text-sm text-gray-500 mb-3">${getStatusLabel(status)} ${bar.hasTerrasse && score > 0 ? `· ${score}%` : ''}</p>
+              <div class="flex items-center gap-4 text-sm text-gray-600">
+                <span>⭐ ${bar.rating || '-'}</span>
+                <span>💬 ${bar.reviews || 0}</span>
+                ${distanceText ? `<span>📍 ${distanceText}</span>` : ''}
+              </div>
+            </div>
+          </div>
+        `;
+        
+        if (isTop) {
+          setupSwipeGestures(card);
+        }
+        
+        container.appendChild(card);
+      }
+      
+      // Check if no more cards
+      if (swipeCardIndex >= swipeCardBars.length) {
+        container.innerHTML = `
+          <div class="h-full flex flex-col items-center justify-center text-gray-400">
+            <div class="text-6xl mb-4">🎉</div>
+            <p class="font-medium">Plus de bars à voir !</p>
+            <button onclick="swipeCardIndex = 0; renderSwipeCards();" class="mt-4 px-4 py-2 bg-amber-500 text-white rounded-lg font-medium">Recommencer</button>
+          </div>
+        `;
+      }
+    }
+    
+    function setupSwipeGestures(card) {
+      let startX = 0;
+      let currentX = 0;
+      let isDragging = false;
+      
+      const onStart = (e) => {
+        isDragging = true;
+        startX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+        card.style.transition = 'none';
+      };
+      
+      const onMove = (e) => {
+        if (!isDragging) return;
+        currentX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+        const diff = currentX - startX;
+        const rotation = diff * 0.1;
+        
+        card.style.transform = `translateX(${diff}px) rotate(${rotation}deg)`;
+        
+        card.classList.toggle('dragging-left', diff < -50);
+        card.classList.toggle('dragging-right', diff > 50);
+      };
+      
+      const onEnd = () => {
+        if (!isDragging) return;
+        isDragging = false;
+        
+        const diff = currentX - startX;
+        card.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
+        
+        if (diff < -100) {
+          swipeCard('left', card);
+        } else if (diff > 100) {
+          swipeCard('right', card);
+        } else {
+          card.style.transform = '';
+          card.classList.remove('dragging-left', 'dragging-right');
+        }
+      };
+      
+      card.addEventListener('mousedown', onStart);
+      card.addEventListener('mousemove', onMove);
+      card.addEventListener('mouseup', onEnd);
+      card.addEventListener('mouseleave', onEnd);
+      
+      card.addEventListener('touchstart', onStart, { passive: true });
+      card.addEventListener('touchmove', onMove, { passive: true });
+      card.addEventListener('touchend', onEnd);
+    }
+    
+    function swipeCard(direction, card = null) {
+      if (!card) {
+        card = document.querySelector('.swipe-card[style*="z-index: 10"]');
+      }
+      if (!card) return;
+      
+      triggerHaptic(direction === 'right' ? 'medium' : 'light');
+      
+      card.classList.add(direction === 'left' ? 'swiping-left' : 'swiping-right');
+      
+      if (direction === 'right') {
+        // Show bar detail
+        const barId = parseInt(card.dataset.barId);
+        setTimeout(() => {
+          showBarDetail(barId);
+        }, 200);
+      }
+      
+      setTimeout(() => {
+        swipeCardIndex++;
+        renderSwipeCards();
+      }, 300);
+    }
+    
+    // ==========================================
+    // HAPTIC FEEDBACK
+    // ==========================================
+    function triggerHaptic(intensity = 'light') {
+      if (!navigator.vibrate) return;
+      
+      switch(intensity) {
+        case 'light':
+          navigator.vibrate(10);
+          break;
+        case 'medium':
+          navigator.vibrate(25);
+          break;
+        case 'heavy':
+          navigator.vibrate([30, 20, 30]);
+          break;
+        case 'success':
+          navigator.vibrate([10, 50, 30]);
+          break;
+        case 'error':
+          navigator.vibrate([50, 30, 50, 30, 50]);
+          break;
+      }
+    }
+    
+    // ==========================================
+    // PULL TO REFRESH
+    // ==========================================
+    let pullStartY = 0;
+    let isPulling = false;
+    let pullDistance = 0;
+    const PULL_THRESHOLD = 80;
+    
+    function setupPullToRefresh() {
+      const listContainer = document.getElementById('bottomSheetList');
+      if (!listContainer) return;
+      
+      listContainer.addEventListener('touchstart', (e) => {
+        if (listContainer.scrollTop === 0) {
+          pullStartY = e.touches[0].clientY;
+          isPulling = true;
+        }
+      }, { passive: true });
+      
+      listContainer.addEventListener('touchmove', (e) => {
+        if (!isPulling) return;
+        
+        pullDistance = e.touches[0].clientY - pullStartY;
+        
+        if (pullDistance > 0 && pullDistance < PULL_THRESHOLD * 2) {
+          const indicator = document.getElementById('pullToRefreshIndicator');
+          indicator.classList.remove('hidden');
+          indicator.classList.add('flex');
+          indicator.style.opacity = Math.min(pullDistance / PULL_THRESHOLD, 1);
+        }
+      }, { passive: true });
+      
+      listContainer.addEventListener('touchend', () => {
+        if (isPulling && pullDistance > PULL_THRESHOLD) {
+          // Trigger refresh
+          triggerHaptic('medium');
+          performRefresh();
+        } else {
+          hideRefreshIndicator();
+        }
+        
+        isPulling = false;
+        pullDistance = 0;
+      });
+    }
+    
+    function performRefresh() {
+      const indicator = document.getElementById('pullToRefreshIndicator');
+      indicator.innerHTML = `
+        <svg class="w-6 h-6 animate-spin mr-2" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+        </svg>
+        <span class="text-sm font-medium">Actualisation...</span>
+      `;
+      
+      // Refresh data
+      setTimeout(() => {
+        fetchWeather();
+        createMarkers();
+        updateUI();
+        updateBottomSheet();
+        
+        triggerHaptic('success');
+        hideRefreshIndicator();
+      }, 1000);
+    }
+    
+    function hideRefreshIndicator() {
+      const indicator = document.getElementById('pullToRefreshIndicator');
+      indicator.classList.add('hidden');
+      indicator.classList.remove('flex');
+      indicator.style.opacity = 0;
+    }
+
+    // ==========================================
     // PWA INSTALLATION
     // ==========================================
     let deferredPrompt = null;
@@ -2026,6 +3632,13 @@
     // Call on load
     window.addEventListener('load', handleURLParams);
     
+    // Show onboarding for new users
+    window.addEventListener('load', () => {
+      setTimeout(showOnboarding, 500);
+      setupPullToRefresh();
+      initDailyChallenges();
+    });
+    
     // Offline detection
     function updateOnlineStatus() {
       const indicator = document.getElementById('offlineIndicator');
@@ -2044,7 +3657,10 @@
     window.initMap = initMap;
   </script>
 
-  <!-- Google Maps API - REMPLACE YOUR_API_KEY_HERE par ta clé -->
-  <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAFF0Qk3gQkkyBt3mcPnfmwl7hDHXmVtBo&callback=initMap"></script>
+  <!-- Google Maps API -->
+  <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAFF0Qk3gQkkyBt3mcPnfmwl7hDHXmVtBo&callback=initMap&libraries=visualization"></script>
+  
+  <!-- MarkerClusterer Library -->
+  <script src="https://unpkg.com/@googlemaps/markerclusterer/dist/index.min.js"></script>
 </body>
 </html>
