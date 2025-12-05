@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spot The Sun - Hors-ligne</title>
+  <meta name="theme-color" content="#f59e0b">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #fef3c7 0%, #fde68a 50%, #fbbf24 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .container {
+      text-align: center;
+      max-width: 400px;
+    }
+    .sun {
+      font-size: 80px;
+      margin-bottom: 20px;
+      animation: float 3s ease-in-out infinite;
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    h1 {
+      font-size: 28px;
+      font-weight: 800;
+      color: #92400e;
+      margin-bottom: 10px;
+    }
+    p {
+      color: #b45309;
+      margin-bottom: 30px;
+      line-height: 1.6;
+    }
+    .cloud {
+      font-size: 60px;
+      opacity: 0.5;
+      margin-bottom: 20px;
+    }
+    button {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: white;
+      border: none;
+      padding: 16px 32px;
+      font-size: 16px;
+      font-weight: 600;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+      transition: all 0.3s;
+    }
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(245, 158, 11, 0.5);
+    }
+    .tips {
+      margin-top: 40px;
+      padding: 20px;
+      background: rgba(255,255,255,0.5);
+      border-radius: 16px;
+    }
+    .tips h3 {
+      color: #92400e;
+      margin-bottom: 10px;
+    }
+    .tips ul {
+      text-align: left;
+      color: #b45309;
+      padding-left: 20px;
+    }
+    .tips li {
+      margin: 8px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="cloud">☁️</div>
+    <div class="sun">☀️</div>
+    <h1>Oups, pas de connexion !</h1>
+    <p>Le soleil se cache temporairement... <br>Vérifie ta connexion internet pour retrouver les terrasses ensoleillées.</p>
+    
+    <button onclick="window.location.reload()">
+      🔄 Réessayer
+    </button>
+    
+    <div class="tips">
+      <h3>💡 En attendant...</h3>
+      <ul>
+        <li>Vérifie ta connexion WiFi ou données mobiles</li>
+        <li>Le soleil est généralement au Sud en journée</li>
+        <li>Les terrasses orientées Sud-Ouest profitent du soleil l'après-midi</li>
+      </ul>
+    </div>
+  </div>
+  
+  <script>
+    // Auto-reload when back online
+    window.addEventListener('online', () => {
+      window.location.reload();
+    });
+  </script>
+</body>
+</html>
