@@ -291,11 +291,11 @@
           </div>
         </div>
 
-        <!-- User Stats -->
-        <div class="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-purple-100 to-pink-100">
+        <!-- User Stats (compact) -->
+        <div class="hidden md:flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-purple-100 to-pink-100">
           <svg class="w-5 h-5 text-yellow-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
           <div>
-            <div class="text-sm font-bold text-purple-800">Niveau <span id="userLevel">1</span></div>
+            <div class="text-sm font-bold text-purple-800">Niv. <span id="userLevel">1</span></div>
             <div class="text-xs text-purple-600"><span id="userXP">0</span> XP</div>
           </div>
           <div class="ml-2 pl-2 border-l border-purple-300">
@@ -304,30 +304,148 @@
         </div>
 
         <!-- Geolocation Button -->
-        <button onclick="centerOnUser()" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-medium shadow-lg shadow-blue-300/50 hover:shadow-xl hover:scale-105 transition-all">
+        <button onclick="centerOnUser()" class="flex items-center gap-2 px-3 py-2 rounded-xl bg-blue-500 text-white font-medium shadow-lg hover:shadow-xl hover:scale-105 transition-all">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-          <span>Ma position</span>
+          <span class="hidden sm:inline">Position</span>
         </button>
 
-        <!-- Badges Button -->
-        <button onclick="showBadgesModal()" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 text-white font-medium shadow-lg shadow-amber-300/50 hover:shadow-xl hover:scale-105 transition-all">
-          <span class="text-lg">🏆</span>
+        <!-- Quick Stats Button (badges + streak) -->
+        <button onclick="showBadgesModal()" class="flex items-center gap-1 px-3 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 text-white font-medium shadow-lg hover:shadow-xl hover:scale-105 transition-all">
+          <span>🏆</span>
           <span id="badgeCount">0</span>
-        </button>
-        
-        <!-- Leaderboard Button -->
-        <button onclick="showLeaderboardModal()" class="flex items-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium shadow-lg shadow-purple-300/50 hover:shadow-xl hover:scale-105 transition-all">
-          <span class="text-lg">👑</span>
+          <span class="hidden sm:inline text-amber-200 mx-1">|</span>
+          <span class="hidden sm:inline">🔥</span>
+          <span class="hidden sm:inline" id="headerStreak">0</span>
         </button>
 
-        <!-- Install PWA Button (hidden by default) -->
-        <button id="installBtn" onclick="installPWA()" class="hidden items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 text-white font-medium shadow-lg shadow-green-300/50 hover:shadow-xl hover:scale-105 transition-all animate-pulse">
-          <span class="text-lg">📲</span>
-          <span>Installer</span>
+        <!-- Menu Button (hamburger) -->
+        <button onclick="toggleMainMenu()" id="menuBtn" class="flex items-center justify-center w-10 h-10 rounded-xl bg-white text-gray-700 shadow-lg hover:shadow-xl hover:scale-105 transition-all">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
         </button>
       </div>
     </div>
   </header>
+  
+  <!-- Slide-out Menu -->
+  <div id="mainMenu" class="fixed inset-y-0 right-0 w-80 max-w-full bg-white shadow-2xl z-[150] transform translate-x-full transition-transform duration-300 ease-out">
+    <div class="h-full flex flex-col">
+      <!-- Menu Header -->
+      <div class="bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-500 p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-xl font-black text-white">☀️ Menu</h2>
+          <button onclick="toggleMainMenu()" class="p-2 hover:bg-white/20 rounded-full transition">
+            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          </button>
+        </div>
+        <!-- User Stats Summary -->
+        <div class="flex items-center gap-4 bg-white/20 backdrop-blur rounded-xl p-3">
+          <div class="w-12 h-12 rounded-full bg-white/30 flex items-center justify-center text-2xl">⭐</div>
+          <div class="text-white flex-1">
+            <p class="font-bold">Niveau <span id="menuLevel">1</span></p>
+            <p class="text-amber-100 text-sm"><span id="menuXp">0</span> XP</p>
+          </div>
+          <div class="text-right text-white">
+            <p class="font-bold text-2xl" id="menuStreak">0</p>
+            <p class="text-amber-100 text-xs">🔥 jours</p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Menu Items -->
+      <div class="flex-1 overflow-y-auto p-4 space-y-2">
+        <!-- Section: Gamification -->
+        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider px-3 pt-2">Progression</p>
+        
+        <button onclick="showBadgesModal(); toggleMainMenu();" class="w-full flex items-center gap-4 p-4 rounded-xl hover:bg-amber-50 transition text-left">
+          <div class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-xl">🏆</div>
+          <div class="flex-1">
+            <p class="font-bold text-gray-800">Mes badges</p>
+            <p class="text-sm text-gray-500"><span id="menuBadgeCount">0</span>/26 débloqués</p>
+          </div>
+          <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+        </button>
+        
+        <button onclick="showChallengesModal(); toggleMainMenu();" class="w-full flex items-center gap-4 p-4 rounded-xl hover:bg-purple-50 transition text-left">
+          <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-xl">🎯</div>
+          <div class="flex-1">
+            <p class="font-bold text-gray-800">Défis du jour</p>
+            <p class="text-sm text-gray-500" id="menuChallengesStatus">3 défis disponibles</p>
+          </div>
+          <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+        </button>
+        
+        <button onclick="showLeaderboardModal(); toggleMainMenu();" class="w-full flex items-center gap-4 p-4 rounded-xl hover:bg-pink-50 transition text-left">
+          <div class="w-10 h-10 rounded-full bg-pink-100 flex items-center justify-center text-xl">👑</div>
+          <div class="flex-1">
+            <p class="font-bold text-gray-800">Classement</p>
+            <p class="text-sm text-gray-500">Compare-toi à tes amis</p>
+          </div>
+          <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+        </button>
+        
+        <!-- Section: Carte -->
+        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider px-3 pt-4">Options carte</p>
+        
+        <div class="p-4 rounded-xl bg-gray-50 space-y-4">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <span class="text-xl">🔘</span>
+              <span class="font-medium text-gray-700">Regrouper les bars</span>
+            </div>
+            <button onclick="toggleClusters(); updateMenuToggles();" id="menuClusterToggle" class="w-12 h-7 rounded-full bg-amber-500 relative transition-colors">
+              <div class="absolute top-1 right-1 w-5 h-5 rounded-full bg-white shadow transition-all" id="clusterToggleKnob"></div>
+            </button>
+          </div>
+          
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <span class="text-xl">🔥</span>
+              <span class="font-medium text-gray-700">Heatmap soleil</span>
+            </div>
+            <button onclick="toggleHeatmap(); updateMenuToggles();" id="menuHeatmapToggle" class="w-12 h-7 rounded-full bg-gray-300 relative transition-colors">
+              <div class="absolute top-1 left-1 w-5 h-5 rounded-full bg-white shadow transition-all" id="heatmapToggleKnob"></div>
+            </button>
+          </div>
+        </div>
+        
+        <!-- Section: App -->
+        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider px-3 pt-4">Application</p>
+        
+        <button onclick="installPWA(); toggleMainMenu();" id="menuInstallBtn" class="w-full flex items-center gap-4 p-4 rounded-xl hover:bg-green-50 transition text-left hidden">
+          <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-xl">📲</div>
+          <div class="flex-1">
+            <p class="font-bold text-gray-800">Installer l'app</p>
+            <p class="text-sm text-gray-500">Accès rapide depuis l'accueil</p>
+          </div>
+        </button>
+        
+        <button onclick="shareWithFriends();" class="w-full flex items-center gap-4 p-4 rounded-xl hover:bg-blue-50 transition text-left">
+          <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-xl">📤</div>
+          <div class="flex-1">
+            <p class="font-bold text-gray-800">Partager l'app</p>
+            <p class="text-sm text-gray-500">Invite tes amis !</p>
+          </div>
+        </button>
+        
+        <button onclick="resetOnboarding();" class="w-full flex items-center gap-4 p-4 rounded-xl hover:bg-gray-100 transition text-left">
+          <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-xl">❓</div>
+          <div class="flex-1">
+            <p class="font-bold text-gray-800">Tutoriel</p>
+            <p class="text-sm text-gray-500">Revoir l'introduction</p>
+          </div>
+        </button>
+      </div>
+      
+      <!-- Menu Footer -->
+      <div class="p-4 border-t border-gray-100 bg-gray-50">
+        <p class="text-center text-xs text-gray-400">Spot The Sun v1.0</p>
+        <p class="text-center text-xs text-gray-400 mt-1">☀️ Fait avec ❤️ à Paris</p>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Menu Backdrop -->
+  <div id="menuBackdrop" onclick="toggleMainMenu()" class="fixed inset-0 bg-black/50 z-[140] hidden opacity-0 transition-opacity duration-300"></div>
 
   <!-- Main Content -->
   <div class="max-w-7xl mx-auto px-4 py-6">
@@ -654,24 +772,15 @@
     📋
   </button>
   
-  <!-- Map Controls Panel -->
+  <!-- Map Controls Panel (simplified - only clear route) -->
   <div id="mapControlsPanel" class="fixed top-24 left-4 z-[60] flex flex-col gap-2">
-    <button id="clusterToggle" onclick="toggleClusters()" class="w-12 h-12 rounded-xl bg-amber-500 text-white shadow-lg flex items-center justify-center text-xl hover:scale-105 transition-transform active:scale-95" title="Regrouper les marqueurs">
-      🔘
-    </button>
-    <button id="heatmapToggle" onclick="toggleHeatmap()" class="w-12 h-12 rounded-xl bg-white text-gray-700 shadow-lg flex items-center justify-center text-xl hover:scale-105 transition-transform active:scale-95" title="Afficher la heatmap soleil">
-      🔥
-    </button>
     <button onclick="clearRoute()" id="clearRouteBtn" class="w-12 h-12 rounded-xl bg-white text-gray-700 shadow-lg flex items-center justify-center text-xl hover:scale-105 transition-transform active:scale-95 hidden" title="Effacer l'itinéraire">
-      🚫
-    </button>
-    <button onclick="showChallengesModal()" class="w-12 h-12 rounded-xl bg-white text-gray-700 shadow-lg flex items-center justify-center text-xl hover:scale-105 transition-transform active:scale-95" title="Défis du jour">
-      🎯
+      ✕
     </button>
   </div>
   
-  <!-- Daily Challenges Floating Panel -->
-  <div id="challengesPanel" class="fixed top-24 right-4 z-[60] w-72 bg-white rounded-2xl shadow-xl hidden md:block overflow-hidden">
+  <!-- Daily Challenges Floating Panel (hidden - moved to menu) -->
+  <div id="challengesPanel" class="fixed top-24 right-4 z-[60] w-72 bg-white rounded-2xl shadow-xl hidden overflow-hidden">
     <div class="bg-gradient-to-r from-purple-500 to-pink-500 p-3">
       <div class="flex items-center justify-between">
         <h3 class="font-bold text-white flex items-center gap-2">
@@ -1751,15 +1860,6 @@
         markers.forEach(m => m.setMap(map));
       }
       
-      // Update button state
-      const btn = document.getElementById('clusterToggle');
-      if (btn) {
-        btn.classList.toggle('bg-amber-500', showClusters);
-        btn.classList.toggle('text-white', showClusters);
-        btn.classList.toggle('bg-white', !showClusters);
-        btn.classList.toggle('text-gray-700', !showClusters);
-      }
-      
       triggerHaptic('light');
     }
     
@@ -1793,16 +1893,6 @@
     function toggleHeatmap() {
       showHeatmap = !showHeatmap;
       createMarkers(); // Refresh to show/hide heatmap
-      
-      // Update button state
-      const btn = document.getElementById('heatmapToggle');
-      if (btn) {
-        btn.classList.toggle('bg-amber-500', showHeatmap);
-        btn.classList.toggle('text-white', showHeatmap);
-        btn.classList.toggle('bg-white', !showHeatmap);
-        btn.classList.toggle('text-gray-700', !showHeatmap);
-      }
-      
       triggerHaptic('light');
     }
     
@@ -2141,6 +2231,91 @@
     function toggleChallengesPanel() {
       const panel = document.getElementById('challengesPanel');
       panel.classList.toggle('hidden');
+    }
+    
+    // ==========================================
+    // MAIN MENU
+    // ==========================================
+    let menuOpen = false;
+    
+    function toggleMainMenu() {
+      menuOpen = !menuOpen;
+      const menu = document.getElementById('mainMenu');
+      const backdrop = document.getElementById('menuBackdrop');
+      
+      if (menuOpen) {
+        menu.classList.remove('translate-x-full');
+        backdrop.classList.remove('hidden');
+        setTimeout(() => backdrop.classList.add('opacity-100'), 10);
+        document.body.style.overflow = 'hidden';
+        updateMenuStats();
+        triggerHaptic('light');
+      } else {
+        menu.classList.add('translate-x-full');
+        backdrop.classList.remove('opacity-100');
+        setTimeout(() => backdrop.classList.add('hidden'), 300);
+        document.body.style.overflow = '';
+      }
+    }
+    
+    function updateMenuStats() {
+      // Update menu stats display
+      document.getElementById('menuLevel').textContent = userStats.level || 1;
+      document.getElementById('menuXp').textContent = userStats.xp || 0;
+      document.getElementById('menuStreak').textContent = userStats.streak || 0;
+      document.getElementById('menuBadgeCount').textContent = userStats.badges?.size || 0;
+      document.getElementById('headerStreak').textContent = userStats.streak || 0;
+      
+      // Update challenges status
+      if (dailyChallenges && dailyChallenges.length > 0) {
+        const completed = dailyChallenges.filter(c => c.completed).length;
+        document.getElementById('menuChallengesStatus').textContent = 
+          completed === dailyChallenges.length ? 'Tous complétés ! 🎉' : `${completed}/${dailyChallenges.length} complétés`;
+      }
+      
+      // Update toggles
+      updateMenuToggles();
+      
+      // Show install button if available
+      if (deferredPrompt) {
+        document.getElementById('menuInstallBtn')?.classList.remove('hidden');
+      }
+    }
+    
+    function updateMenuToggles() {
+      // Update cluster toggle
+      const clusterToggle = document.getElementById('menuClusterToggle');
+      const clusterKnob = document.getElementById('clusterToggleKnob');
+      if (clusterToggle && clusterKnob) {
+        if (showClusters) {
+          clusterToggle.classList.add('bg-amber-500');
+          clusterToggle.classList.remove('bg-gray-300');
+          clusterKnob.classList.add('right-1');
+          clusterKnob.classList.remove('left-1');
+        } else {
+          clusterToggle.classList.remove('bg-amber-500');
+          clusterToggle.classList.add('bg-gray-300');
+          clusterKnob.classList.remove('right-1');
+          clusterKnob.classList.add('left-1');
+        }
+      }
+      
+      // Update heatmap toggle
+      const heatmapToggle = document.getElementById('menuHeatmapToggle');
+      const heatmapKnob = document.getElementById('heatmapToggleKnob');
+      if (heatmapToggle && heatmapKnob) {
+        if (showHeatmap) {
+          heatmapToggle.classList.add('bg-amber-500');
+          heatmapToggle.classList.remove('bg-gray-300');
+          heatmapKnob.classList.add('right-1');
+          heatmapKnob.classList.remove('left-1');
+        } else {
+          heatmapToggle.classList.remove('bg-amber-500');
+          heatmapToggle.classList.add('bg-gray-300');
+          heatmapKnob.classList.remove('right-1');
+          heatmapKnob.classList.add('left-1');
+        }
+      }
     }
     
     function showChallengesModal() {

@@ -2,7 +2,7 @@
 // SPOT THE SUN - Service Worker
 // ==========================================
 
-const CACHE_NAME = 'spot-the-sun-v4';
+const CACHE_NAME = 'spot-the-sun-v5';
 const OFFLINE_URL = '/offline.html';
 
 // Files to cache for offline use
