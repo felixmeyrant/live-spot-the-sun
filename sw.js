@@ -2,16 +2,16 @@
 // SPOT THE SUN - Service Worker
 // ==========================================
 
-const CACHE_NAME = 'spot-the-sun-v5';
-const OFFLINE_URL = '/offline.html';
+const CACHE_NAME = 'spot-the-sun-v6';
+const OFFLINE_URL = './offline.html';
 
-// Files to cache for offline use
+// Files to cache for offline use (relative paths for GitHub Pages)
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/bars_paris.json',
-  '/manifest.json',
-  'https://cdn.tailwindcss.com'
+  './',
+  './index.html',
+  './bars_paris.json',
+  './manifest.json',
+  './offline.html'
 ];
 
 // Install event - cache static assets
@@ -22,7 +22,7 @@ self.addEventListener('install', (event) => {
     caches.open(CACHE_NAME)
       .then((cache) => {
         console.log('☀️ Service Worker: Caching static assets');
-        return cache.addAll(STATIC_ASSETS.filter(url => !url.startsWith('http')));
+        return cache.addAll(STATIC_ASSETS);
       })
       .then(() => {
         console.log('☀️ Service Worker: Installed successfully');
@@ -142,7 +142,7 @@ self.addEventListener('notificationclick', (event) => {
   
   if (event.action === 'explore') {
     event.waitUntil(
-      clients.openWindow('/?filter=sunny')
+      clients.openWindow('./index.html?filter=sunny')
     );
   }
 });

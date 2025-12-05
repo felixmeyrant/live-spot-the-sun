@@ -2,7 +2,8 @@
   "name": "Spot The Sun - Terrasses Ensoleillées",
   "short_name": "Spot The Sun",
   "description": "Trouve les terrasses ensoleillées à Paris en temps réel",
-  "start_url": "/",
+  "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#fef3c7",
   "theme_color": "#f59e0b",
@@ -30,14 +31,14 @@
       "name": "Terrasses au soleil",
       "short_name": "Au soleil",
       "description": "Voir les terrasses ensoleillées maintenant",
-      "url": "/?filter=sunny",
+      "url": "./index.html?filter=sunny",
       "icons": [{ "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><text x='48' y='70' text-anchor='middle' font-size='60'>☀️</text></svg>", "sizes": "96x96" }]
     },
     {
       "name": "Près de moi",
       "short_name": "Près de moi",
       "description": "Bars les plus proches",
-      "url": "/?sort=distance",
+      "url": "./index.html?sort=distance",
       "icons": [{ "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><text x='48' y='70' text-anchor='middle' font-size='60'>📍</text></svg>", "sizes": "96x96" }]
     }
   ]
